@@ -34,7 +34,7 @@ const loadDotEnv = () => {
 
 loadDotEnv();
 
-const SITE_URL = process.env.SITE_URL || 'https://gilcorretorsp.com.br';
+const SITE_URL = process.env.SITE_URL || 'https://gauchoimoveissp.com.br';
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
@@ -101,8 +101,8 @@ const main = async () => {
   const [properties, neighborhoods] = await Promise.all([
     supabaseFetch({
       table: 'properties',
-      select: 'slug,updated_at,status',
-      filters: [['status', 'eq.active']],
+      select: 'slug,updated_at,status,is_active',
+      filters: [['status', 'eq.available'], ['is_active', 'eq.true']],
     }),
     supabaseFetch({
       table: 'neighborhoods',

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { trackLeadEvent } from '@/utils/gaHelper';
+import { PROPERTY_SELECT_FIELDS } from '@/lib/propertySelect';
 
 const toSupabasePublicImageUrl = (raw) => {
   if (typeof raw !== 'string') return '';
@@ -97,34 +98,51 @@ const useProperty = (slug) => {
         setLoading(true);
         setError(null);
 
-        // Fetch property with broker details
-        const { data, error: fetchError } = await supabase
+        const { data: slugData, error: slugError } = await supabase
           .from('properties')
-          .select('*, broker:brokers(*)')
+          .select(PROPERTY_SELECT_FIELDS)
           .eq('slug', slug)
-          .single();
+          .maybeSingle();
 
-        if (fetchError) throw fetchError;
+        if (slugError) throw slugError;
+
+        let data = slugData;
+
+        if (!data) {
+          const { data: codeData, error: codeError } = await supabase
+            .from('properties')
+            .select(PROPERTY_SELECT_FIELDS)
+            .eq('code', slug)
+            .maybeSingle();
+
+          if (codeError) throw codeError;
+          data = codeData;
+        }
+
         if (!data) throw new Error('Property not found');
 
         // Only update state if not aborted
         if (!signal.aborted) {
+          const galleryImages = normalizeUrlArray(data.images);
+          const coverImage = toSupabasePublicImageUrl(data.cover_image);
           const normalized = {
             ...data,
-            images: normalizeUrlArray(data.images),
+            images: coverImage
+              ? [coverImage, ...galleryImages.filter((image) => image !== coverImage)]
+              : galleryImages,
             plans_urls: normalizeUrlArray(data.plans_urls),
             floor_plans: normalizeUrlArray(data.floor_plans)
           };
 
           setProperty(normalized);
-          
+
           // Trigger GA4 event for viewing item
           // This should ideally happen only once per valid view
           trackLeadEvent('view_item', {
             currency: 'BRL',
             value: normalized.business_type === 'rent' ? normalized.rental_price : normalized.price,
-            items: [{ 
-                item_id: normalized.id, 
+            items: [{
+                item_id: normalized.code || normalized.slug,
                 item_name: normalized.title,
                 item_category: normalized.business_type === 'rent' ? 'Locação' : 'Venda',
             }],

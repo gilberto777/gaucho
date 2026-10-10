@@ -10,6 +10,7 @@ import { formatPrice } from '@/utils/seoHelpers';
 import { Skeleton } from '@/components/ui/skeleton';
 import { trackWhatsAppClick } from '@/utils/analyticsEvents';
 import Seo from '@/components/Seo';
+import { PROPERTY_SELECT_FIELDS } from '@/lib/propertySelect';
 
 // Lazy load heavy components
 const PropertyCard = lazy(() => import('@/components/PropertyCard'));
@@ -162,8 +163,8 @@ const PropertyListPage = () => {
     try {
       setLoading(true);
       let query = supabase.from('properties')
-        .select('*, broker:brokers(*)')
-        .eq('status', 'active')
+        .select(PROPERTY_SELECT_FIELDS)
+        .in('status', ['active', 'available'])
         .order('created_at', { ascending: false });
 
       if (businessTypeFilter !== 'all') {
@@ -241,7 +242,7 @@ const PropertyListPage = () => {
         property_slug: property.slug,
         deal_type: property.business_type,
         neighborhood: property.neighborhood,
-        property_id: property.id
+        property_id: property.code || property.id
       });
     }
   };
@@ -364,7 +365,7 @@ const PropertyListPage = () => {
                <div className={cn("grid gap-6", viewMode === 'grid' ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1")}>
                  <Suspense fallback={<Skeleton className="h-64" />}>
                    {visibleProperties.map((property, index) => (
-                     <div key={property.id} onClickCapture={(e) => handleCardClickCapture(e, property)}>
+                    <div key={property.code || property.id} onClickCapture={(e) => handleCardClickCapture(e, property)}>
                        <PropertyCard property={property} index={index} layout={viewMode} />
                      </div>
                    ))}

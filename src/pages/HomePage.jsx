@@ -10,6 +10,7 @@ import WhyChooseSection from '@/components/home/WhyChooseSection';
 import HowItWorksSection from '@/components/home/HowItWorksSection';
 import TestimonialsSection from '@/components/home/TestimonialsSection';
 import LatestNewsSection from '@/components/home/LatestNewsSection';
+import { PROPERTY_SELECT_FIELDS } from '@/lib/propertySelect';
 import GoogleReviewsSection from '@/components/home/GoogleReviewsSection';
 import { logBundleInfo } from '@/utils/performanceReporter';
 import { trackWhatsAppClick } from '@/utils/analyticsEvents';
@@ -18,9 +19,9 @@ import { trackWhatsAppClick } from '@/utils/analyticsEvents';
 const PropertyCard = lazy(() => import('@/components/PropertyCard'));
 
 const DEFAULT_CONTENT = {
-  hero_title: 'Imóveis exclusivos\nna Zona Sul de São Paulo',
-  hero_subtitle: 'Curadoria de médio e alto padrão com atendimento consultivo do início à entrega das chaves.',
-  hero_image_url: '/hero-rcvend.jpg'
+  hero_title: 'Corretor Gaucho Imoveis SP',
+  hero_subtitle: 'Imoveis em Sao Paulo para venda e locacao.',
+  hero_image_url: '/hero-gaucho.jpg?v=3'
 };
 
 const HomePage = () => {
@@ -52,6 +53,8 @@ const HomePage = () => {
 				setContent((prev) => ({
 					...prev,
 					...data,
+					hero_title: DEFAULT_CONTENT.hero_title,
+					hero_subtitle: DEFAULT_CONTENT.hero_subtitle,
 					hero_image_url: DEFAULT_CONTENT.hero_image_url,
 				}));
 			}
@@ -60,7 +63,12 @@ const HomePage = () => {
 
   const fetchProperties = async () => {
     try {
-      const { data } = await supabase.from('properties').select('*').eq('featured', true).eq('status', 'active').limit(6);
+      const { data } = await supabase
+        .from('properties')
+        .select(PROPERTY_SELECT_FIELDS)
+        .in('status', ['active', 'available'])
+        .order('featured', { ascending: false })
+        .limit(3);
       setFeaturedProperties(data || []);
     } catch (e) { console.error(e); } finally { setLoadingProperties(false); }
   };
@@ -76,20 +84,20 @@ const HomePage = () => {
     navigate(`/imoveis?${params.toString()}`);
   };
 
-  const whatsappPhone = '5511970259728';
+  const whatsappPhone = '5511995294404';
   const whatsappText = encodeURIComponent('Olá! Vim pelo site. Quero comprar um imóvel na Zona Sul de São Paulo (médio/alto padrão) e gostaria de sugestões.');
   const whatsappHref = `https://wa.me/${whatsappPhone}?text=${whatsappText}`;
 
   const businessSchema = {
     '@context': 'https://schema.org',
     '@type': ['RealEstateAgent', 'LocalBusiness'],
-    name: 'Radar',
-    url: 'https://rcvend.com.br/',
-    email: 'radar.consultoriaimoveis@gmail.com',
-    telephone: '+55 11 97025-9728',
+    name: 'Corretor Gaucho',
+    url: 'https://gauchoimoveissp.com.br/',
+    email: 'gaucho.agente@gmail.com',
+    telephone: '+55 11 99529-4404',
     address: {
       '@type': 'PostalAddress',
-      streetAddress: 'R. Antônio Bandeira, Alto da Boa Vista, Santo Amaro',
+      streetAddress: 'Av. Dr. Chucri Zaidan, 111',
       addressLocality: 'São Paulo',
       addressRegion: 'SP',
       addressCountry: 'BR'
@@ -113,7 +121,7 @@ const HomePage = () => {
   return (
     <>
       <Seo
-        title={`${content.hero_title} | Radar`}
+        title={`${content.hero_title} | Corretor Gaucho`}
         description={content.hero_subtitle}
         canonical="/"
         type="website"
@@ -139,48 +147,27 @@ const HomePage = () => {
 
       <main className="min-h-screen">
         {/* HERO - CRITICAL LCP */}
-        <section className="relative min-h-[78vh] flex items-center overflow-hidden">
+        <section className="relative min-h-[78vh] overflow-hidden">
           <div className="absolute inset-0 z-0">
              <ImageOptimizer 
                 src={content.hero_image_url} 
-                alt="São Paulo Skyline" 
+                alt="Imoveis em Sao Paulo com o Corretor Gaucho"
                 className="w-full h-full"
                 priority={true}
                 width={1920}
                 height={1080}
                 sizes="100vw"
+                objectPosition="center top"
+                imageFilter="brightness(1.12)"
              />
-             <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/55" />
           </div>
 
-          <div className="relative z-20 w-full max-w-7xl mx-auto px-4 pt-24 pb-24">
-			<div className="text-center">
-				<h1 className="text-white drop-shadow-lg text-4xl sm:text-5xl lg:text-6xl leading-[1.08] tracking-[-0.02em]">
-					{loadingContent ? (
-						<Skeleton className="h-14 w-3/4 mx-auto bg-white/20" />
-					) : (
-						(content.hero_title || '').split('\n').map((line, idx) => (
-							<span key={idx} className="block">
-								{line}
-							</span>
-						))
-					)}
-				</h1>
-				<p className="font-sans mt-5 text-white/85 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
-					{loadingContent ? <Skeleton className="h-8 w-2/3 mx-auto bg-white/20" /> : content.hero_subtitle}
-				</p>
-				<div className="mt-8 flex flex-wrap gap-3 justify-center mb-10">
-					<Button onClick={handleSearch} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-7 h-12 shadow-md shadow-black/10 transition-transform active:scale-[0.99]">
-						Buscar imóveis
-					</Button>
-					<Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-7 h-12 shadow-md shadow-black/10 transition-transform active:scale-[0.99]">
-						<a href={whatsappHref} target="_blank" rel="noopener noreferrer" onClick={() => trackWhatsAppClick({ page_path: window.location.pathname, source: 'home_hero_whatsapp' })}>
-							<MessageCircle className="mr-2 w-4 h-4" /> WhatsApp
-						</a>
-					</Button>
-				</div>
-			</div>
-		</div>
+          <div className="absolute inset-0 z-10 flex items-center justify-center px-4">
+            <h1 className="max-w-5xl text-center font-['Inter',system-ui,sans-serif] text-[#f4f1e8]/95 text-3xl sm:text-5xl lg:text-6xl font-medium leading-tight drop-shadow-[0_3px_14px_rgba(0,0,0,0.55)]">
+              Expertise em Negócios Imobiliários nas Regiões Sul e demais Regiões de São Paulo-SP
+            </h1>
+          </div>
+
         </section>
 
 		{/* SEARCH BAR */}
@@ -237,18 +224,18 @@ const HomePage = () => {
 				</div>
 
 				{loadingProperties ? (
-					<div className="flex flex-col gap-6">
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
 						{[1, 2, 3].map(i => <Skeleton key={i} className="h-64 rounded-xl w-full" />)}
 					</div>
 				) : (
 					<Suspense fallback={<div className="flex justify-center p-12"><Loader2 className="animate-spin text-muted-foreground" /></div>}>
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-8" onClickCapture={(e) => {
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" onClickCapture={(e) => {
 							if (e.target.closest('button') && e.target.closest('button').textContent.toLowerCase().includes('whatsapp')) {
 								trackWhatsAppClick({ page_path: window.location.pathname, deal_type: 'venda', source: 'featured_card' });
 							}
 						}}>
 							{featuredProperties.map((p, i) => (
-								<PropertyCard key={p.id} property={p} index={i} layout="grid" />
+								<PropertyCard key={p.code || p.slug} property={p} index={i} layout="grid" />
 							))}
 						</div>
 						<div className="text-center mt-10">
