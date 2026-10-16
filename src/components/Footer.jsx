@@ -17,10 +17,10 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div>
             <div className="flex items-center gap-2">
-              <img src="/logo-roda-pe.png" alt="Radar" className="h-14 w-auto" />
+              <img src="/logo-gaucho.png" alt="Corretor Gaúcho Imóveis SP" className="h-20 w-24 object-contain brightness-0 invert" loading="lazy" decoding="async" />
               <div className="leading-tight">
-                <p className="font-sans text-xl text-white">Radar</p>
-                <p className="text-xs text-white/70">RALF Negócios Imobiliário</p>
+                <p className="font-sans text-xl text-white">Corretor Gaúcho</p>
+                <p className="text-xs text-white/70">Imóveis SP</p>
               </div>
             </div>
             <p className="text-sm text-white/70 mt-4 leading-relaxed">
@@ -90,7 +90,7 @@ const Footer = () => {
         </div>
 
         <div className="mt-12 pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/60">
-          <p> {new Date().getFullYear()} Radar — Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} Corretor Gaúcho — Todos os direitos reservados.</p>
           <p>Desenvolvido para o mercado imobiliário em São Paulo.</p>
         </div>
       </div>

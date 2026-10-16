@@ -21,7 +21,7 @@ const PropertyCard = lazy(() => import('@/components/PropertyCard'));
 const DEFAULT_CONTENT = {
   hero_title: 'Corretor Gaucho Imoveis SP',
   hero_subtitle: 'Imoveis em Sao Paulo para venda e locacao.',
-  hero_image_url: '/hero-gaucho.jpg?v=3'
+  hero_image_url: '/template.jpg'
 };
 
 const HomePage = () => {

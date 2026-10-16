@@ -61,11 +61,24 @@ const Navigation = () => {
         <div className="flex justify-between items-center h-20">
           
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3 group">
-            <img src="/logo-ro.png" alt="Radar" className="h-14 w-auto" />
+          <Link to="/" className="flex items-center space-x-3 group" aria-label="Corretor Gaúcho Imóveis SP - Página inicial">
+            {isLogoLoaded ? (
+              <img
+                src="/logo-gaucho.png"
+                alt="Corretor Gaúcho Imóveis SP"
+                className="h-[68px] w-[76px] object-contain"
+                loading="eager"
+                decoding="async"
+                onError={() => setIsLogoLoaded(false)}
+              />
+            ) : (
+              <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-primary text-lg font-bold text-primary-foreground">
+                CG
+              </span>
+            )}
             <div className="flex flex-col">
-              <span className="text-xl font-semibold leading-none font-sans text-foreground">Radar</span>
-              <span className="text-[11px] font-medium tracking-wide text-muted-foreground">RALF NEGÓCIOS IMOBILIÁRIO</span>
+              <span className="text-xl font-semibold leading-none font-sans text-foreground">Corretor Gaúcho</span>
+              <span className="text-[11px] font-medium tracking-wide text-muted-foreground">IMÓVEIS SP</span>
             </div>
           </Link>
 
