@@ -60,7 +60,11 @@ const MediaSection = ({ property, onOpenGallery, onOpenMap }) => {
             <div className="relative group cursor-pointer bg-gray-100" onClick={onOpenGallery}>
               <div className="aspect-[4/3] sm:aspect-[16/9] w-full overflow-hidden relative">
                 <ImageOptimizer 
-                  src={property.images?.[activeImage]} 
+                  src={property.images?.[activeImage]}
+                  sources={[
+                    ...(property.images || []).slice(activeImage + 1),
+                    ...(property.images || []).slice(0, activeImage),
+                  ]}
                   alt={property.title} 
                   className="w-full h-full object-cover" 
                   priority 

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-labelledby="title description">
+  <title id="title">Foto indisponível</title>
+  <desc id="description">Imagem substituta para imóvel sem fotografia disponível.</desc>
+  <rect width="800" height="600" fill="#eef1f3"/>
+  <g fill="none" stroke="#9aa5ad" stroke-linecap="round" stroke-linejoin="round" stroke-width="18">
+    <path d="M270 315 400 205l130 110v125H270Z"/>
+    <path d="M335 440V335h130v105M245 330l155-132 155 132"/>
+  </g>
+  <text x="400" y="510" fill="#6f7b83" font-family="Arial, Helvetica, sans-serif" font-size="30" text-anchor="middle">Foto indisponível</text>
+</svg>

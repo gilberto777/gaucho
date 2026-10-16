@@ -10,7 +10,8 @@ import { formatPrice } from '@/utils/seoHelpers';
 import { Skeleton } from '@/components/ui/skeleton';
 import { trackWhatsAppClick } from '@/utils/analyticsEvents';
 import Seo from '@/components/Seo';
-import { PROPERTY_SELECT_FIELDS } from '@/lib/propertySelect';
+import { PROPERTY_CARD_SELECT_FIELDS, withPropertyCardImages } from '@/lib/propertySelect';
+import { normalizePropertiesMedia } from '@/lib/propertyImages';
 
 // Lazy load heavy components
 const PropertyCard = lazy(() => import('@/components/PropertyCard'));
@@ -25,68 +26,6 @@ const useDebounce = (value, delay) => {
     return () => clearTimeout(handler);
   }, [value, delay]);
   return debouncedValue;
-};
-
-const toSupabasePublicImageUrl = (raw) => {
-  if (typeof raw !== 'string') return '';
-  const url = raw
-    .trim()
-    .replace(/^["']+/, '')
-    .replace(/["']+$/, '')
-    .replace(/,+$/, '')
-    .trim();
-  if (!url) return '';
-
-  if (/^(https?:)?\/\//i.test(url) || url.startsWith('data:')) {
-    return url.includes(' ') ? url.replace(/ /g, '%20') : url;
-  }
-
-  // Convert relative/path formats to the public bucket URL using the configured Supabase client
-  let path = url.replace(/^\/+/, '');
-  path = path.replace(/^property-images\//, '');
-  path = path.replace(/^storage\/v1\/object\/public\/property-images\//, '');
-  path = path.replace(/^storage\/v1\/object\/public\//, '');
-  path = path.replace(/^property-images\//, '');
-
-  const encodedPath = path
-    .split('/')
-    .map((seg) => encodeURIComponent(seg))
-    .join('/');
-
-  const publicUrl = supabase?.storage?.from?.('property-images')?.getPublicUrl?.(encodedPath)?.data?.publicUrl;
-  return publicUrl || url;
-};
-
-const normalizeUrlArray = (value) => {
-  if (!value) return [];
-
-  let arr = value;
-
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (!trimmed) return [];
-
-    try {
-      const parsed = JSON.parse(trimmed);
-      arr = parsed;
-    } catch {
-      arr = trimmed
-        .split(/\s*[|,]\s*/)
-        .map((u) => u.trim())
-        .filter(Boolean);
-    }
-  }
-
-  if (!Array.isArray(arr)) return [];
-
-  return arr
-    .map((item) => {
-      if (!item) return null;
-      if (typeof item === 'string') return toSupabasePublicImageUrl(item);
-      if (typeof item === 'object') return toSupabasePublicImageUrl(item.url || item.publicUrl || item.public_url || '');
-      return null;
-    })
-    .filter(Boolean);
 };
 
 const PropertyListPage = () => {
@@ -162,10 +101,12 @@ const PropertyListPage = () => {
   const fetchProperties = async () => {
     try {
       setLoading(true);
-      let query = supabase.from('properties')
-        .select(PROPERTY_SELECT_FIELDS)
-        .in('status', ['active', 'available'])
-        .order('created_at', { ascending: false });
+      let query = withPropertyCardImages(
+        supabase.from('properties')
+          .select(PROPERTY_CARD_SELECT_FIELDS)
+          .in('status', ['active', 'available'])
+          .order('created_at', { ascending: false })
+      );
 
       if (businessTypeFilter !== 'all') {
         query = query.eq('business_type', businessTypeFilter);
@@ -185,14 +126,7 @@ const PropertyListPage = () => {
 
       const { data, error } = await query;
       if (error) throw error;
-      const normalized = (data || []).map((p) => ({
-        ...p,
-        images: normalizeUrlArray(p.images),
-        plans_urls: normalizeUrlArray(p.plans_urls),
-        floor_plans: normalizeUrlArray(p.floor_plans)
-      }));
-
-      setProperties(normalized);
+      setProperties(normalizePropertiesMedia(data || []));
     } catch (error) {
 	  console.error('[PropertyListPage] Error fetching properties:', error);
 	  const devDetails = import.meta.env.DEV

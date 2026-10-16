@@ -2,6 +2,7 @@ import React, { useEffect, useCallback, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ImageOptimizer from '@/components/ImageOptimizer';
 
 const PhotoModal = ({ isOpen, images, initialIndex = 0, onClose }) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -107,17 +108,26 @@ const PhotoModal = ({ isOpen, images, initialIndex = 0, onClose }) => {
             onTouchEnd={handleTouchEnd}
           >
             <AnimatePresence mode="wait">
-              <motion.img
+              <motion.div
                 key={currentIndex}
-                src={images[currentIndex]}
-                alt={`Foto ${currentIndex + 1}`}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
-                className="max-w-full max-h-[85vh] object-contain shadow-2xl rounded-lg pointer-events-none select-none" // pointer-events-none to ensure swipe events bubble to container
-                draggable={false}
-              />
+                className="w-full h-full max-h-[85vh] flex items-center justify-center pointer-events-none select-none"
+              >
+                <ImageOptimizer
+                  src={images[currentIndex]}
+                  sources={[
+                    ...images.slice(currentIndex + 1),
+                    ...images.slice(0, currentIndex),
+                  ]}
+                  alt={`Foto ${currentIndex + 1}`}
+                  className="w-full h-full max-h-[85vh] bg-transparent shadow-2xl rounded-lg"
+                  objectFit="contain"
+                  priority
+                />
+              </motion.div>
             </AnimatePresence>
 
             {/* Navigation Arrows (Desktop) */}

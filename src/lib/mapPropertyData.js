@@ -1,4 +1,5 @@
 import { cleanWordPressHTML } from './cleanWordPressHTML';
+import { getPropertyImageCandidates } from './propertyImages';
 
 /**
  * Maps raw CSV data to the application's property schema.
@@ -96,6 +97,7 @@ export function mapPropertyData(rawData, brokerId) {
      const galleryUrls = rawData.gallery.split('|').map(u => u.trim()).filter(Boolean);
      images = [...images, ...galleryUrls];
   }
+  images = getPropertyImageCandidates({ images });
   // If no image, use placeholder? No, leave empty array is better, UI handles fallbacks.
 
   return {
@@ -112,6 +114,7 @@ export function mapPropertyData(rawData, brokerId) {
     bedrooms,
     bathrooms,
     parking_spaces,
+    cover_image: images[0] || null,
     images, // Array of strings
     featured: false,
     created_at: new Date().toISOString(),

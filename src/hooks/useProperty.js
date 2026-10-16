@@ -1,79 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { trackLeadEvent } from '@/utils/gaHelper';
-import { PROPERTY_SELECT_FIELDS } from '@/lib/propertySelect';
-
-const toSupabasePublicImageUrl = (raw) => {
-  if (typeof raw !== 'string') return '';
-  const url = raw
-    .trim()
-    .replace(/^["']+/, '')
-    .replace(/["']+$/, '')
-    .replace(/,+$/, '')
-    .trim();
-  if (!url) return '';
-
-  // Keep already absolute URLs and data URIs
-  if (/^(https?:)?\/\//i.test(url) || url.startsWith('data:')) {
-    // If an absolute URL has unencoded spaces, it may cause Supabase Storage to return 400.
-    return url.includes(' ') ? url.replace(/ /g, '%20') : url;
-  }
-
-  // Convert relative/path formats to the public bucket URL using the configured Supabase client
-  // Examples we handle:
-  // - "prop_123.jpg"
-  // - "/prop_123.jpg"
-  // - "property-images/prop_123.jpg"
-  // - "/storage/v1/object/public/property-images/prop_123.jpg"
-  // - "storage/v1/object/public/property-images/prop_123.jpg"
-  let path = url.replace(/^\/+/, '');
-  path = path.replace(/^property-images\//, '');
-  path = path.replace(/^storage\/v1\/object\/public\/property-images\//, '');
-  path = path.replace(/^storage\/v1\/object\/public\//, '');
-
-  // If the path still contains the bucket prefix, strip it
-  path = path.replace(/^property-images\//, '');
-
-  const encodedPath = path
-    .split('/')
-    .map((seg) => encodeURIComponent(seg))
-    .join('/');
-
-  const publicUrl = supabase?.storage?.from?.('property-images')?.getPublicUrl?.(encodedPath)?.data?.publicUrl;
-  return publicUrl || url;
-};
-
-const normalizeUrlArray = (value) => {
-  if (!value) return [];
-
-  let arr = value;
-
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (!trimmed) return [];
-
-    try {
-      const parsed = JSON.parse(trimmed);
-      arr = parsed;
-    } catch {
-      arr = trimmed
-        .split(/\s*[|,]\s*/)
-        .map((u) => u.trim())
-        .filter(Boolean);
-    }
-  }
-
-  if (!Array.isArray(arr)) return [];
-
-  return arr
-    .map((item) => {
-      if (!item) return null;
-      if (typeof item === 'string') return toSupabasePublicImageUrl(item);
-      if (typeof item === 'object') return toSupabasePublicImageUrl(item.url || item.publicUrl || item.public_url || '');
-      return null;
-    })
-    .filter(Boolean);
-};
+import { PROPERTY_DETAIL_SELECT_FIELDS, withPropertyDetailImages } from '@/lib/propertySelect';
+import { normalizePropertyMedia } from '@/lib/propertyImages';
 
 /**
  * Custom hook to fetch property data and handle related states/tracking
@@ -98,22 +27,24 @@ const useProperty = (slug) => {
         setLoading(true);
         setError(null);
 
-        const { data: slugData, error: slugError } = await supabase
-          .from('properties')
-          .select(PROPERTY_SELECT_FIELDS)
-          .eq('slug', slug)
-          .maybeSingle();
+        const { data: slugData, error: slugError } = await withPropertyDetailImages(
+          supabase
+            .from('properties')
+            .select(PROPERTY_DETAIL_SELECT_FIELDS)
+            .eq('slug', slug)
+        ).maybeSingle();
 
         if (slugError) throw slugError;
 
         let data = slugData;
 
         if (!data) {
-          const { data: codeData, error: codeError } = await supabase
-            .from('properties')
-            .select(PROPERTY_SELECT_FIELDS)
-            .eq('code', slug)
-            .maybeSingle();
+          const { data: codeData, error: codeError } = await withPropertyDetailImages(
+            supabase
+              .from('properties')
+              .select(PROPERTY_DETAIL_SELECT_FIELDS)
+              .eq('code', slug)
+          ).maybeSingle();
 
           if (codeError) throw codeError;
           data = codeData;
@@ -123,16 +54,7 @@ const useProperty = (slug) => {
 
         // Only update state if not aborted
         if (!signal.aborted) {
-          const galleryImages = normalizeUrlArray(data.images);
-          const coverImage = toSupabasePublicImageUrl(data.cover_image);
-          const normalized = {
-            ...data,
-            images: coverImage
-              ? [coverImage, ...galleryImages.filter((image) => image !== coverImage)]
-              : galleryImages,
-            plans_urls: normalizeUrlArray(data.plans_urls),
-            floor_plans: normalizeUrlArray(data.floor_plans)
-          };
+          const normalized = normalizePropertyMedia(data);
 
           setProperty(normalized);
 

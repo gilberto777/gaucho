@@ -3,6 +3,8 @@ import { Marker, Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
 import { Bed, Bath, Maximize, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ImageOptimizer from '@/components/ImageOptimizer';
+import { getPropertyImageCandidates } from '@/lib/propertyImages';
 
 const PropertyMarker = ({ property }) => {
   // Ensure we have valid coordinates
@@ -19,17 +21,17 @@ const PropertyMarker = ({ property }) => {
   // Determine which price to show
   const displayPrice = property.price || property.rental_price;
   const priceLabel = property.type === 'rent' ? 'Aluguel' : 'Venda';
+  const imageCandidates = getPropertyImageCandidates(property);
 
   return (
     <Marker position={[Number(property.lat), Number(property.lng)]}>
       <Popup className="property-popup" minWidth={280} maxWidth={280}>
         <div className="w-full p-0">
           <div className="relative h-40 mb-3 rounded-lg overflow-hidden group">
-            <img 
-              src={property.images?.[0] || 'https://via.placeholder.com/300x200'} 
+            <ImageOptimizer
+              src={imageCandidates[0]}
+              sources={imageCandidates.slice(1)}
               alt={property.title}
-              loading="lazy"
-              decoding="async"
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
             <div className="absolute top-2 left-2">

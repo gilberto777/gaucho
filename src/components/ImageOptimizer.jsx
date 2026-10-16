@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { supabase } from '@/lib/supabase';
+import { normalizeImageUrl, PROPERTY_IMAGE_FALLBACK } from '@/lib/propertyImages';
 
 // Helper to determine if we can optimize this URL (e.g., Unsplash)
 const getOptimizedUrl = (url, width, format = 'webp', quality = 75) => {
@@ -16,6 +16,7 @@ const getOptimizedUrl = (url, width, format = 'webp', quality = 75) => {
 
 const ImageOptimizer = ({
   src,
+  sources = [],
   alt,
   className,
   width,
@@ -24,28 +25,14 @@ const ImageOptimizer = ({
   onError,
   priority = false, // If true, eager load (LCP candidate)
   sizes = "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw",
-  objectFit = "cover"
+  objectFit = "cover",
+  objectPosition,
+  imageFilter,
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isVisible, setIsVisible] = useState(priority);
   const imgRef = useRef(null);
   const containerRef = useRef(null);
-
-  const toPublicUrlIfNeeded = (value) => {
-    if (typeof value !== 'string') return '';
-    const v = value.trim();
-    if (!v) return '';
-    if (/^(https?:)?\/\//i.test(v) || v.startsWith('data:') || v.startsWith('/')) return v;
-
-    const encodedPath = v
-      .replace(/^\/+/, '')
-      .split('/')
-      .map((seg) => encodeURIComponent(seg))
-      .join('/');
-
-    const publicUrl = supabase?.storage?.from?.('property-images')?.getPublicUrl?.(encodedPath)?.data?.publicUrl;
-    return publicUrl || v;
-  };
 
   useEffect(() => {
     if (priority) return;
@@ -68,22 +55,22 @@ const ImageOptimizer = ({
     return () => observer.disconnect();
   }, [priority]);
 
-  const fallbackSrc = '/sem-foto.svg';
-  const finalFallbackSrc = 'https://via.placeholder.com/800x600?text=No+Image';
-  const coerceSrc = (v) => {
-    const normalized = toPublicUrlIfNeeded(v);
-    return typeof normalized === 'string' && normalized.trim() ? normalized.trim() : fallbackSrc;
-  };
-  const [currentSrc, setCurrentSrc] = useState(coerceSrc(src));
+  const sourceList = useMemo(() => {
+    const requestedSources = [src, ...(Array.isArray(sources) ? sources : [sources])]
+      .map((value) => normalizeImageUrl(value))
+      .filter(Boolean);
+
+    return [...new Set([...requestedSources, PROPERTY_IMAGE_FALLBACK])];
+  }, [src, sources]);
+  const sourceKey = sourceList.join('\n');
+  const [sourceIndex, setSourceIndex] = useState(0);
 
   useEffect(() => {
-    const nextSrc = coerceSrc(src);
-    if (nextSrc === currentSrc) return;
+    setSourceIndex(0);
     setIsLoaded(false);
-    setCurrentSrc(nextSrc);
-  }, [src, currentSrc]);
+  }, [sourceKey]);
 
-  const originalSrc = currentSrc;
+  const originalSrc = sourceList[sourceIndex] || PROPERTY_IMAGE_FALLBACK;
 
   const canOptimizeFormats = originalSrc.includes('images.unsplash.com');
 
@@ -128,14 +115,17 @@ const ImageOptimizer = ({
                 onLoad && onLoad(e);
               }}
               onError={(e) => {
-                setIsLoaded(true);
                 onError && onError(e);
-                if (currentSrc !== fallbackSrc && currentSrc !== finalFallbackSrc) {
-                  setCurrentSrc(fallbackSrc);
-                  return;
-                }
-                if (currentSrc === fallbackSrc) setCurrentSrc(finalFallbackSrc);
+                setSourceIndex((current) => {
+                  if (current >= sourceList.length - 1) {
+                    setIsLoaded(true);
+                    return current;
+                  }
+                  setIsLoaded(false);
+                  return current + 1;
+                });
               }}
+              style={{ objectPosition, filter: imageFilter }}
               className={cn(
                 "w-full h-full transition-all duration-700",
                 objectFit === "contain" ? "object-contain" : "object-cover",
@@ -158,14 +148,17 @@ const ImageOptimizer = ({
               onLoad && onLoad(e);
             }}
             onError={(e) => {
-              setIsLoaded(true);
               onError && onError(e);
-              if (currentSrc !== fallbackSrc && currentSrc !== finalFallbackSrc) {
-                setCurrentSrc(fallbackSrc);
-                return;
-              }
-              if (currentSrc === fallbackSrc) setCurrentSrc(finalFallbackSrc);
+              setSourceIndex((current) => {
+                if (current >= sourceList.length - 1) {
+                  setIsLoaded(true);
+                  return current;
+                }
+                setIsLoaded(false);
+                return current + 1;
+              });
             }}
+            style={{ objectPosition, filter: imageFilter }}
             className={cn(
               "w-full h-full transition-all duration-700",
               objectFit === "contain" ? "object-contain" : "object-cover",

@@ -8,6 +8,7 @@ import ImageOptimizer from '@/components/ImageOptimizer';
 import { formatPrice } from '@/utils/seoHelpers';
 import { cn } from '@/lib/utils';
 import WhatsAppButton from '@/components/WhatsAppButton';
+import { getPropertyImageCandidates } from '@/lib/propertyImages';
 
 const AmenitiesDisplay = ({ amenities }) => {
   if (!amenities || !Array.isArray(amenities) || amenities.length === 0) return null;
@@ -68,6 +69,7 @@ const PropertyCard = ({ property, index = 0, layout = 'grid' }) => {
 
   const statusInfo = getStatusInfo(property.property_status);
   const codeLabel = (property?.code || '').trim();
+  const imageCandidates = getPropertyImageCandidates(property);
 
   const handleImageClick = () => {
     navigate(`/imovel/${property.slug}`);
@@ -97,7 +99,8 @@ const PropertyCard = ({ property, index = 0, layout = 'grid' }) => {
           onClick={handleImageClick}
         >
           <ImageOptimizer
-            src={property.images?.[0]}
+            src={imageCandidates[0]}
+            sources={imageCandidates.slice(1)}
             alt={property.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           />
@@ -197,7 +200,8 @@ const PropertyCard = ({ property, index = 0, layout = 'grid' }) => {
         onClick={handleImageClick}
       >
         <ImageOptimizer
-          src={property.images?.[0]}
+          src={imageCandidates[0]}
+          sources={imageCandidates.slice(1)}
           alt={property.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
         />

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import { useToast } from "@/components/ui/use-toast";
 import ImageOptimizer from '@/components/ImageOptimizer';
+import { getPropertyImageCandidates } from '@/lib/propertyImages';
 import { formatPrice } from '@/utils/seoHelpers';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +32,7 @@ const AmenitiesDisplay = ({ amenities }) => {
 };
 
 const PropertyListCard = ({ property, index = 0 }) => {
+  const imageCandidates = getPropertyImageCandidates(property);
   const { toast } = useToast();
   const shouldReduceMotion = useReducedMotion();
   const navigate = useNavigate();
@@ -79,7 +81,8 @@ const PropertyListCard = ({ property, index = 0 }) => {
         onClick={handleImageClick}
       >
         <ImageOptimizer
-          src={property.images?.[0]}
+          src={imageCandidates[0]}
+          sources={imageCandidates.slice(1)}
           alt={property.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           sizes="(max-width: 768px) 100vw, 320px"

@@ -87,7 +87,11 @@ const PhotoCarousel = ({ images = [], onPhotoClick, className, hasFloorPlans, on
              )}
 
              <ImageOptimizer 
-               src={images[currentIndex]} 
+               src={images[currentIndex]}
+               sources={[
+                 ...images.slice(currentIndex + 1),
+                 ...images.slice(0, currentIndex),
+               ]}
                alt={`Foto ${currentIndex + 1}`}
                className="w-full h-full object-cover"
                priority={true}

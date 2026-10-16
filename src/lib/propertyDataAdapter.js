@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { getPropertyImageCandidates } from './propertyImages';
 
 const CARD_FIELDS = [
   'id',
@@ -30,9 +31,10 @@ const CARD_FIELDS = [
   'tour_url',
   'created_at',
   'updated_at',
+  'cover_image',
 ].join(',');
 
-const IMAGE_FIELDS = 'id,url,storage_path,alt_text,order_index,is_cover,image_type';
+const IMAGE_FIELDS = 'id,image_url,storage_path,alt_text,order_index,is_cover';
 
 // Cards never need descriptions, embeddings or entire image galleries. Keeping
 // this projection small prevents a listing visit from exhausting database egress.
@@ -40,7 +42,6 @@ export const PUBLIC_PROPERTY_CARD_SELECT = `${CARD_FIELDS},property_images(${IMA
 export const PUBLIC_PROPERTY_DETAIL_SELECT = `*,property_images(${IMAGE_FIELDS})`;
 
 export const withCardImageScope = (query) => query
-  .eq('property_images.image_type', 'photo')
   .order('is_cover', { foreignTable: 'property_images', ascending: false })
   .order('order_index', { foreignTable: 'property_images', ascending: true })
   .limit(1, { foreignTable: 'property_images' });
@@ -112,15 +113,12 @@ export const normalizeProperty = (property) => {
     })
     : [];
 
-  const photos = relatedImages
-    .filter((image) => !image.image_type || image.image_type === 'photo')
-    .map((image) => toPublicImageUrl(image.url || image.storage_path || ''))
-    .filter(Boolean);
+  const photos = getPropertyImageCandidates({
+    ...property,
+    property_images: relatedImages,
+  });
 
-  const floorPlans = relatedImages
-    .filter((image) => image.image_type === 'floor_plan')
-    .map((image) => toPublicImageUrl(image.url || image.storage_path || ''))
-    .filter(Boolean);
+  const floorPlans = [];
 
   const businessType = property.business_type || property.purpose || 'sale';
   const area = property.area ?? property.area_useful ?? property.area_total ?? null;

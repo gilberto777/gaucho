@@ -10,7 +10,8 @@ import WhyChooseSection from '@/components/home/WhyChooseSection';
 import HowItWorksSection from '@/components/home/HowItWorksSection';
 import TestimonialsSection from '@/components/home/TestimonialsSection';
 import LatestNewsSection from '@/components/home/LatestNewsSection';
-import { PROPERTY_SELECT_FIELDS } from '@/lib/propertySelect';
+import { PROPERTY_CARD_SELECT_FIELDS, withPropertyCardImages } from '@/lib/propertySelect';
+import { normalizePropertiesMedia } from '@/lib/propertyImages';
 import GoogleReviewsSection from '@/components/home/GoogleReviewsSection';
 import { logBundleInfo } from '@/utils/performanceReporter';
 import { trackWhatsAppClick } from '@/utils/analyticsEvents';
@@ -63,13 +64,15 @@ const HomePage = () => {
 
   const fetchProperties = async () => {
     try {
-      const { data } = await supabase
-        .from('properties')
-        .select(PROPERTY_SELECT_FIELDS)
-        .in('status', ['active', 'available'])
-        .order('featured', { ascending: false })
-        .limit(3);
-      setFeaturedProperties(data || []);
+      const { data } = await withPropertyCardImages(
+        supabase
+          .from('properties')
+          .select(PROPERTY_CARD_SELECT_FIELDS)
+          .in('status', ['active', 'available'])
+          .order('featured', { ascending: false })
+          .limit(3)
+      );
+      setFeaturedProperties(normalizePropertiesMedia(data || []));
     } catch (e) { console.error(e); } finally { setLoadingProperties(false); }
   };
 

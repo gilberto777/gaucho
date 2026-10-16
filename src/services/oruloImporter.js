@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { generateSlug } from '@/lib/slugGenerator';
+import { getPropertyImageCandidates } from '@/lib/propertyImages';
 
 const ensureUniqueSlug = async (baseSlug) => {
   let slug = baseSlug;
@@ -36,6 +37,20 @@ export const importOruloProperty = async ({ broker_id, data }) => {
 
     const baseSlug = generateSlug(data.slug || title);
     const slug = await ensureUniqueSlug(baseSlug);
+    const images = getPropertyImageCandidates({
+      cover_image: data.cover_image
+        || data.main_image
+        || data.main_photo
+        || data.featured_image
+        || data.image
+        || data.imagem,
+      images: data.images
+        || data.photos
+        || data.fotos
+        || data.gallery
+        || data.galeria
+        || data.media,
+    });
 
     const payload = {
       broker_id,
@@ -57,7 +72,8 @@ export const importOruloProperty = async ({ broker_id, data }) => {
       bedrooms: data.bedrooms ? Number(data.bedrooms) : 0,
       bathrooms: data.bathrooms ? Number(data.bathrooms) : 0,
       parking_spaces: data.parking_spaces ? Number(data.parking_spaces) : 0,
-      images: Array.isArray(data.images) ? data.images : [],
+      cover_image: images[0] || null,
+      images,
       amenities: Array.isArray(data.amenities) ? data.amenities : [],
       status: 'active'
     };
